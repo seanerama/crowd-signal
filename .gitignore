@@ -15,3 +15,4 @@ coverage/
 # Per-app deployment access (host + credential locations) — shared out-of-band,
 # never committed. The committed pointer (.verity/deploy-access.README.md) stays.
 .verity/deploy-access.md
+.verity/deploy.env

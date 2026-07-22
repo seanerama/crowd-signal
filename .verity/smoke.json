@@ -1,0 +1,13 @@
+{
+  "baseUrl": "http://ue1khehsjcb77de7ulzbyl1u.34.207.137.224.sslip.io",
+  "flows": [
+    {
+      "name": "healthz answers with ok + real db check",
+      "steps": [
+        { "goto": "/healthz" },
+        { "expectText": "\"ok\":true" },
+        { "expectText": "\"db\":\"ok\"" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+name: Release
+# Crowd-Signal release pipeline. Triggered by a v* tag (verity release cut).
+#
+# NOTE on images (ADR 0003): the production image is built ARM-native ON the
+# deploy box by Coolify from the tagged commit — this workflow does not push an
+# image. What it does own: prove the tagged commit is green, run a Trivy scan
+# (filesystem + config, incl. the Dockerfile and the dependency lockfile), and
+# publish the GitHub Release with the generated changelog. deploy.sh records the
+# on-box image digest into STATUS.md — the digest of record.
+on:
+  push:
+    tags: ["v*"]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm test
+  trivy-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Trivy scan (fs + config — deps, Dockerfile, workflows)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+          ignore-unfixed: true
+  release:
+    needs: [verify, trivy-scan]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Create GitHub Release with changelog
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          PREV=$(git tag --sort=-v:refname | grep -v "^${TAG}$" | head -1 || true)
+          RANGE=${PREV:+${PREV}..}${GITHUB_SHA}
+          NOTES=$(git log --no-merges --pretty='- %s' ${RANGE})
+          gh release create "$TAG" --title "$TAG" --notes "## ${TAG#v}
+
+          ${NOTES}"
