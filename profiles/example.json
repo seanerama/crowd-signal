@@ -1,0 +1,11 @@
+{
+  "id": "example",
+  "name": "Example profile",
+  "description": "Seeded example — shows the profile shape. Inactive by default; edit or ignore it.",
+  "recipients": [],
+  "active": false,
+  "hygiene": {},
+  "subscriptions": [
+    { "ticker": "KXHIGHCHI", "kind": "series" }
+  ]
+}
