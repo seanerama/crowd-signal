@@ -1,0 +1,53 @@
+{
+  "event": {
+    "event_ticker": "KXHIGHNY-26JUL22",
+    "series_ticker": "KXHIGHNY",
+    "title": "Highest temperature in NYC on Jul 22, 2026?",
+    "sub_title": "Jul 22, 2026",
+    "category": "Climate and Weather",
+    "mutually_exclusive": true,
+    "strike_date": "2026-07-23T02:00:00Z"
+  },
+  "markets": [
+    {
+      "ticker": "KXHIGHNY-26JUL22-B87",
+      "event_ticker": "KXHIGHNY-26JUL22",
+      "market_type": "binary",
+      "title": "Will the high temp in NYC be 87-88°F on Jul 22, 2026?",
+      "subtitle": "87° to 88°",
+      "open_time": "2026-07-21T14:00:00Z",
+      "close_time": "2026-07-23T02:00:00Z",
+      "expiration_time": "2026-07-30T14:00:00Z",
+      "status": "active",
+      "yes_bid": 42,
+      "yes_ask": 46,
+      "no_bid": 54,
+      "no_ask": 58,
+      "last_price": 44,
+      "volume": 12873,
+      "open_interest": 5321,
+      "result": "",
+      "can_close_early": true
+    },
+    {
+      "ticker": "KXHIGHNY-26JUL22-B83",
+      "event_ticker": "KXHIGHNY-26JUL22",
+      "market_type": "binary",
+      "title": "Will the high temp in NYC be 83-84°F on Jul 22, 2026?",
+      "subtitle": "83° to 84°",
+      "open_time": "2026-07-20T14:00:00Z",
+      "close_time": "2026-07-22T02:00:00Z",
+      "expiration_time": "2026-07-29T14:00:00Z",
+      "status": "closed",
+      "yes_bid": 0,
+      "yes_ask": 0,
+      "no_bid": 0,
+      "no_ask": 0,
+      "last_price": 2,
+      "volume": 8050,
+      "open_interest": 3000,
+      "result": "",
+      "can_close_early": true
+    }
+  ]
+}

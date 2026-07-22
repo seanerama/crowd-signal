@@ -113,6 +113,44 @@ describe("config validation at boot", () => {
     ).toThrow(/TRIGGER_API_TOKEN[\s\S]*RESEND_API_KEY[\s\S]*ANTHROPIC_API_KEY/);
   });
 
+  it("kalshi knobs default to the public API base and conservative limits", () => {
+    const config = loadConfig({ ...baseEnv });
+    expect(config.kalshi).toEqual({
+      apiBase: "https://external-api.kalshi.com/trade-api/v2",
+      rps: 5,
+      burst: 10,
+      maxAttempts: 4
+    });
+  });
+
+  it("kalshi knobs are env-overridable (base URL for tests, limits for tuning)", () => {
+    const config = loadConfig({
+      ...baseEnv,
+      KALSHI_API_BASE: "http://127.0.0.1:9999",
+      KALSHI_RPS: "2.5",
+      KALSHI_BURST: "4",
+      KALSHI_MAX_ATTEMPTS: "6"
+    });
+    expect(config.kalshi).toEqual({
+      apiBase: "http://127.0.0.1:9999",
+      rps: 2.5,
+      burst: 4,
+      maxAttempts: 6
+    });
+  });
+
+  it("refuses to boot on invalid kalshi numeric knobs", () => {
+    expect(() => loadConfig({ ...baseEnv, KALSHI_RPS: "-1" })).toThrow(
+      /KALSHI_RPS/
+    );
+    expect(() => loadConfig({ ...baseEnv, KALSHI_BURST: "2.5" })).toThrow(
+      /KALSHI_BURST/
+    );
+    expect(() =>
+      loadConfig({ ...baseEnv, KALSHI_MAX_ATTEMPTS: "zero" })
+    ).toThrow(/KALSHI_MAX_ATTEMPTS/);
+  });
+
   it("DATA_DIR defaults to /data and is overridable", () => {
     expect(loadConfig({ ...baseEnv }).dataDir).toBe("/data");
     expect(loadConfig({ ...baseEnv, DATA_DIR: "/tmp/x" }).dataDir).toBe(
