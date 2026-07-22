@@ -1,6 +1,11 @@
 node_modules/
 dist/
 *.tgz
+# Local SQLite state (real state lives on the /data volume)
+*.db
+*.db-shm
+*.db-wal
+coverage/
 .DS_Store
 .env
 .env.*
