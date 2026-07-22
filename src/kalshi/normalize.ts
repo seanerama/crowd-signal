@@ -26,10 +26,38 @@ function clampCents(n: number): number {
 }
 
 /**
- * Yes price in cents (0-100, the implied probability of YES): last trade price
- * when one exists, otherwise the bid/ask midpoint, otherwise 0.
+ * Parse a decimal-dollar string ("0.0100" = 1 cent) to cents, or null when
+ * absent/unparseable. The live API (observed 2026-07-22) serves prices this
+ * way; the legacy integer-cent fields now come back null.
+ */
+export function dollarsToCents(raw: string | null | undefined): number | null {
+  if (raw === null || raw === undefined || raw.trim() === "") return null;
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return null;
+  return Math.round(n * 100);
+}
+
+/** Parse a fixed-point string ("1390.00") to a rounded integer, or null. */
+export function fpToInt(raw: string | null | undefined): number | null {
+  if (raw === null || raw === undefined || raw.trim() === "") return null;
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return null;
+  return Math.round(n);
+}
+
+/**
+ * Yes price in cents (0-100, the implied probability of YES).
+ * Order: current *_dollars fields first (last trade, then bid/ask midpoint),
+ * then the legacy integer-cent fields as fallback, then 0.
  */
 function yesPriceCents(raw: RawMarket): number {
+  const lastDollars = dollarsToCents(raw.last_price_dollars);
+  if (lastDollars !== null && lastDollars > 0) return clampCents(lastDollars);
+  const bidDollars = dollarsToCents(raw.yes_bid_dollars);
+  const askDollars = dollarsToCents(raw.yes_ask_dollars);
+  if (bidDollars !== null && askDollars !== null && bidDollars + askDollars > 0) {
+    return clampCents((bidDollars + askDollars) / 2);
+  }
   if (typeof raw.last_price === "number" && raw.last_price > 0) {
     return clampCents(raw.last_price);
   }
@@ -37,6 +65,14 @@ function yesPriceCents(raw: RawMarket): number {
     return clampCents((raw.yes_bid + raw.yes_ask) / 2);
   }
   return 0;
+}
+
+function marketVolume(raw: RawMarket): number {
+  return fpToInt(raw.volume_fp) ?? raw.volume ?? 0;
+}
+
+function marketOpenInterest(raw: RawMarket): number | null {
+  return fpToInt(raw.open_interest_fp) ?? raw.open_interest ?? null;
 }
 
 export interface NormalizeContext {
@@ -57,8 +93,8 @@ export function normalizeMarket(raw: RawMarket, ctx: NormalizeContext): Snapshot
     eventTitle: ctx.eventTitle,
     marketUrl: `${MARKET_URL_BASE}${raw.ticker}`,
     yesPriceCents: yesPriceCents(raw),
-    volume: raw.volume ?? 0,
-    openInterest: raw.open_interest ?? null,
+    volume: marketVolume(raw),
+    openInterest: marketOpenInterest(raw),
     closeTime: new Date(raw.close_time).toISOString(),
     status: mapStatus(raw.status),
     settlement: mapSettlement(raw.result),
