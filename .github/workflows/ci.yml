@@ -1,15 +1,18 @@
 name: CI
-# Crowd-Signal — Verity hygiene gate (stack-agnostic).
-# Honestly green on a fresh scaffold: secret-scan + a structure check, no faked
-# pass. Lint and test gates are added when the Architect chooses the stack and the
-# walking skeleton lands (the progressive gate — framework-spec §3).
+# Crowd-Signal — Verity gate.
+# Stage 1 lands the progressive gate the scaffold promised: lint + typecheck +
+# build + real tests on top of the original structure + secret-scan jobs.
+#
+# Secret scan note: the gitleaks-action range scan breaks when a push contains
+# the root commit (`<root>^..HEAD` is an invalid range), so we run the pinned
+# gitleaks binary directly over the FULL history (git mode, no range) — honest
+# and green: exit 0 clean, non-zero (2 = leaks found) fails the job.
 on:
   pull_request:
   push:
     branches: [main]
 permissions:
   contents: read
-  pull-requests: read # gitleaks lists PR commits via the API on pull_request
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -26,11 +29,57 @@ jobs:
           echo "structure ok"
   secret-scan:
     runs-on: ubuntu-latest
+    env:
+      GITLEAKS_VERSION: 8.24.3
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-      - name: Gitleaks
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0 # full history — gitleaks scans every commit
+      - name: Install gitleaks (pinned)
+        run: |
+          curl -sSfL -o gitleaks.tar.gz \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          tar -xzf gitleaks.tar.gz gitleaks
+          ./gitleaks version
+      - name: Scan full git history
+        run: ./gitleaks detect --source . --redact --exit-code 2 -v
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
