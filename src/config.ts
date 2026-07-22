@@ -58,12 +58,22 @@ export interface Config {
   /** Empty unless set; guaranteed non-empty when ADMIN_UI_ENABLED is ON. */
   adminSessionSecret: string;
   kalshi: KalshiConfig;
+  /** Empty unless set; guaranteed non-empty when MAILER_ENABLED is ON. */
+  resendApiKey: string;
+  /** Sender address (ADR 0004: shared Resend sender in v1). */
+  mailerFrom: string;
+  /** Resend API base URL; overridable for tests (RESEND_API_BASE). */
+  resendApiBase: string;
 }
 
 type Env = Record<string, string | undefined>;
 
 export const KALSHI_PUBLIC_API_BASE =
   "https://external-api.kalshi.com/trade-api/v2";
+
+/** ADR 0004: v1 sender is the shared Resend onboarding address. */
+export const DEFAULT_MAILER_FROM = "onboarding@resend.dev";
+export const DEFAULT_RESEND_API_BASE = "https://api.resend.com";
 
 function parsePositiveNumber(
   name: string,
@@ -157,6 +167,9 @@ export function loadConfig(env: Env = process.env): Config {
     flags,
     adminPassword: env.ADMIN_PASSWORD?.trim() ?? "",
     adminSessionSecret: env.ADMIN_SESSION_SECRET?.trim() ?? "",
-    kalshi
+    kalshi,
+    resendApiKey: env.RESEND_API_KEY?.trim() ?? "",
+    mailerFrom: env.MAILER_FROM?.trim() || DEFAULT_MAILER_FROM,
+    resendApiBase: env.RESEND_API_BASE?.trim() || DEFAULT_RESEND_API_BASE
   };
 }

@@ -93,6 +93,20 @@ const MIGRATIONS: readonly Migration[] = [
         UNIQUE (market_ticker, end_period)
       );
     `
+  },
+  {
+    id: "0004-profile-resolutions",
+    sql: `
+      CREATE TABLE IF NOT EXISTS profile_resolutions (
+        profile_id  TEXT NOT NULL,
+        run_id      TEXT NOT NULL,
+        ticker      TEXT NOT NULL,
+        resolved_at TEXT NOT NULL,
+        UNIQUE (profile_id, run_id, ticker)
+      );
+      CREATE INDEX IF NOT EXISTS idx_profile_resolutions_profile
+        ON profile_resolutions (profile_id, resolved_at DESC);
+    `
   }
 ];
 
