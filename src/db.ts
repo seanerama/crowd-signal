@@ -59,6 +59,40 @@ const MIGRATIONS: readonly Migration[] = [
         expires_at TEXT NOT NULL
       );
     `
+  },
+  {
+    id: "0003-snapshots-candlestick-cache",
+    sql: `
+      CREATE TABLE IF NOT EXISTS snapshots (
+        ticker          TEXT    NOT NULL,
+        event_ticker    TEXT    NOT NULL,
+        series_ticker   TEXT,
+        title           TEXT    NOT NULL,
+        event_title     TEXT    NOT NULL,
+        market_url      TEXT    NOT NULL,
+        yes_price_cents INTEGER NOT NULL,
+        volume          INTEGER NOT NULL,
+        open_interest   INTEGER,
+        close_time      TEXT    NOT NULL,
+        status          TEXT    NOT NULL,
+        settlement      TEXT,
+        fetched_at      TEXT    NOT NULL,
+        stale           INTEGER NOT NULL DEFAULT 0,
+        run_id          TEXT,
+        UNIQUE (ticker, fetched_at)
+      );
+      CREATE INDEX IF NOT EXISTS idx_snapshots_ticker_fetched_at
+        ON snapshots (ticker, fetched_at DESC);
+      CREATE TABLE IF NOT EXISTS candlestick_cache (
+        series_ticker         TEXT,
+        market_ticker         TEXT    NOT NULL,
+        end_period            TEXT    NOT NULL,
+        yes_price_close_cents INTEGER,
+        volume                INTEGER NOT NULL DEFAULT 0,
+        fetched_at            TEXT    NOT NULL,
+        UNIQUE (market_ticker, end_period)
+      );
+    `
   }
 ];
 
