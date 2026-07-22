@@ -30,8 +30,36 @@ const MIGRATIONS: readonly Migration[] = [
       CREATE INDEX IF NOT EXISTS idx_runs_kind_day ON runs (kind, day);
     `
   },
-  // NOTE: id 0002 is claimed by a parallel in-flight stage (profiles/admin).
-  // The runner applies by id, so the gap is harmless.
+  {
+    id: "0002-profiles-subscriptions-admin-sessions",
+    sql: `
+      CREATE TABLE IF NOT EXISTS profiles (
+        id             TEXT PRIMARY KEY,
+        name           TEXT NOT NULL,
+        description    TEXT NOT NULL DEFAULT '',
+        recipients     TEXT NOT NULL DEFAULT '[]',
+        hygiene_config TEXT NOT NULL DEFAULT '{}',
+        active         INTEGER NOT NULL DEFAULT 1,
+        created_at     TEXT NOT NULL,
+        updated_at     TEXT NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS subscriptions (
+        id         TEXT PRIMARY KEY,
+        profile_id TEXT NOT NULL REFERENCES profiles (id),
+        ticker     TEXT NOT NULL,
+        kind       TEXT NOT NULL CHECK (kind IN ('series', 'event')),
+        added_at   TEXT NOT NULL,
+        UNIQUE (profile_id, ticker, kind)
+      );
+      CREATE INDEX IF NOT EXISTS idx_subscriptions_profile
+        ON subscriptions (profile_id);
+      CREATE TABLE IF NOT EXISTS admin_sessions (
+        token_hash TEXT PRIMARY KEY,
+        created_at TEXT NOT NULL,
+        expires_at TEXT NOT NULL
+      );
+    `
+  },
   {
     id: "0003-snapshots-candlestick-cache",
     sql: `
