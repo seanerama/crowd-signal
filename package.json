@@ -1,6 +1,6 @@
 {
   "name": "crowd-signal",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "description": "Crowd-Signal — daily Kalshi market-movement newsletter (walking skeleton)",
   "type": "module",
