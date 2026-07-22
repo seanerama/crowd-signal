@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.1
+
+### Chores
+- sync package version to 0.2.1
+
+### Other
+- Stage 8: read live Kalshi *_dollars/*_fp fields, legacy fallback (fixes all-0% brief) (#13)
+- Ship v0.2.0: prod deploy + KALSHI/ADMIN_UI flags live, STATUS truth, admin smoke flow
+
 ## 0.2.0
 
 ### Chores
