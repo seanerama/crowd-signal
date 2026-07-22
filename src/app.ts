@@ -12,10 +12,13 @@ export function buildApp(config: Config): FastifyInstance {
   const db = openDb(config.dataDir);
   const app = Fastify({ logger: process.env.NODE_ENV !== "test" });
 
-  app.setErrorHandler((err, _req, reply) => {
-    const status = err.statusCode && err.statusCode < 500 ? err.statusCode : 500;
+  app.setErrorHandler((err: unknown, _req, reply) => {
+    const e = err instanceof Error ? (err as Error & { statusCode?: number }) : undefined;
+    const status = e?.statusCode && e.statusCode < 500 ? e.statusCode : 500;
     if (status >= 500) app.log.error(err);
-    void reply.code(status).send({ error: status >= 500 ? "internal error" : err.message });
+    void reply
+      .code(status)
+      .send({ error: status >= 500 ? "internal error" : e?.message ?? "error" });
   });
 
   healthRoutes(app, db);
