@@ -8,6 +8,13 @@
         { "expectText": "\"ok\":true" },
         { "expectText": "\"db\":\"ok\"" }
       ]
+    },
+    {
+      "name": "admin surface is live and gated (login page renders)",
+      "steps": [
+        { "goto": "/admin/login" },
+        { "expectText": "Crowd-Signal admin" }
+      ]
     }
   ]
 }

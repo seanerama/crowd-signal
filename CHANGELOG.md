@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.0
+
+### Chores
+- sync package version to 0.2.0 ahead of release (healthz self-report drift — STATUS watch item)
+
+### Other
+- Stage 5: daily newsletter — renderer, Mailer (Resend), artifact store, async trigger pipeline (#12)
+- Stage 3: SnapshotStore persistence + 24h/7d delta computation (#11)
+- Stage 4: profiles, series/event subscriptions, admin UI with session auth (#10)
+- Stage 2: KalshiSource — public API client, token-bucket limiter, backoff (#9)
+- Ship v0.1.2: first prod deploy recorded — STATUS runtime truth, playwright smoke dep
+
 ## 0.1.2
 
 ### Fixes
