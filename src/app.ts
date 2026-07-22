@@ -1,16 +1,30 @@
 /**
  * Fastify app factory (ADR 0001). buildApp() owns the DB handle so tests can
- * boot the whole spine against a temp DATA_DIR.
+ * boot the whole spine against a temp DATA_DIR. The optional `overrides`
+ * parameter is a TEST-ONLY injection surface (mock Kalshi transport, captured
+ * mailer); production callers pass nothing.
  */
 import Fastify, { type FastifyInstance } from "fastify";
 import { adminRoutes } from "./admin/routes.js";
 import type { Config } from "./config.js";
 import { openDb } from "./db.js";
+import { createKalshiSource } from "./kalshi/index.js";
+import type { KalshiClientOverrides } from "./kalshi/client.js";
+import { createMailer, DryRunMailer, type Mailer } from "./mailer/index.js";
 import { seedProfilesIfEmpty } from "./profiles/store.js";
 import { healthRoutes } from "./routes/health.js";
-import { triggerRoutes } from "./routes/trigger.js";
+import { drainRuns, triggerRoutes } from "./routes/trigger.js";
 
-export function buildApp(config: Config): FastifyInstance {
+export interface AppOverrides {
+  kalshi?: KalshiClientOverrides;
+  /** Replaces BOTH the default and the dryRun mailer (test capture). */
+  mailer?: Mailer;
+}
+
+export function buildApp(
+  config: Config,
+  overrides: AppOverrides = {}
+): FastifyInstance {
   const db = openDb(config.dataDir);
   const app = Fastify({ logger: process.env.NODE_ENV !== "test" });
 
@@ -32,8 +46,12 @@ export function buildApp(config: Config): FastifyInstance {
       .send({ error: status >= 500 ? "internal error" : e?.message ?? "error" });
   });
 
+  const source = createKalshiSource(config, app.log, overrides.kalshi ?? {});
+  const mailer = overrides.mailer ?? createMailer(config, app.log);
+  const dryRunMailer = overrides.mailer ?? new DryRunMailer(app.log);
+
   healthRoutes(app, db);
-  triggerRoutes(app, db, config);
+  triggerRoutes(app, db, config, { source, mailer, dryRunMailer });
   // Kill-switch (spec stage 4): flag OFF → admin routes are never registered,
   // so /admin* is a plain 404.
   if (config.flags.ADMIN_UI_ENABLED) {
@@ -41,6 +59,8 @@ export function buildApp(config: Config): FastifyInstance {
   }
 
   app.addHook("onClose", async () => {
+    // Let any in-flight async runs settle before the DB handle goes away.
+    await drainRuns();
     db.close();
   });
 

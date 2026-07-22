@@ -10,6 +10,8 @@ import type {
   FastifyRequest
 } from "fastify";
 import { timingSafeEqual } from "node:crypto";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import type { Config } from "../config.js";
 import type { Db } from "../db.js";
 import { HygieneError } from "../profiles/hygiene.js";
@@ -246,6 +248,25 @@ ${error ? `<p class="error">${escapeHtml(error)}</p>` : ""}
       })
       .join("\n");
 
+    /** Links to persisted artifact HTML files for a run (from disk). */
+    function artifactLinks(runId: string): string {
+      let files: string[];
+      try {
+        files = readdirSync(join(config.dataDir, "artifacts", runId)).filter(
+          (f) => f.endsWith(".html")
+        );
+      } catch {
+        files = [];
+      }
+      if (files.length === 0) return `<span class="muted">—</span>`;
+      return files
+        .map((f) => {
+          const profileId = f.slice(0, -".html".length);
+          return `<a href="/admin/artifacts/${encodeURIComponent(runId)}/${encodeURIComponent(profileId)}">${escapeHtml(profileId)}</a>`;
+        })
+        .join(" ");
+    }
+
     const runs = db
       .prepare("SELECT * FROM runs ORDER BY started_at DESC LIMIT 20")
       .all() as RunRow[];
@@ -257,6 +278,7 @@ ${error ? `<p class="error">${escapeHtml(error)}</p>` : ""}
 <td>${escapeHtml(r.day)}</td>
 <td class="muted">${escapeHtml(r.started_at)}</td>
 <td>${escapeHtml(r.status)}</td>
+<td>${artifactLinks(r.run_id)}</td>
 </tr>`
       )
       .join("\n");
@@ -283,13 +305,48 @@ ${
   runs.length === 0
     ? `<p class="muted">No runs recorded yet.</p>`
     : `<table>
-<thead><tr><th>Run</th><th>Kind</th><th>Day</th><th>Started</th><th>Status</th></tr></thead>
+<thead><tr><th>Run</th><th>Kind</th><th>Day</th><th>Started</th><th>Status</th><th>Artifacts</th></tr></thead>
 <tbody>${runRows}</tbody>
 </table>`
 }
 </div>`
       )
     );
+  });
+
+  // ---------- run artifacts (view sent HTML) ----------
+
+  // Path-traversal safety: both ids are validated against a strict allowlist
+  // BEFORE any filesystem access; nothing outside artifacts/<runId>/ is ever
+  // touched. (Run ids are UUIDs; profile ids from seeds/admin fit this too.)
+  const SAFE_ID = /^[A-Za-z0-9-]+$/;
+
+  app.get("/admin/artifacts/:runId/:profileId", async (req, reply) => {
+    const token = requireSession(req, reply);
+    if (!token) return reply;
+    const { runId, profileId } = req.params as {
+      runId: string;
+      profileId: string;
+    };
+    if (!SAFE_ID.test(runId) || !SAFE_ID.test(profileId)) {
+      return html(
+        reply,
+        layout("Bad request", `<div class="card"><h1>400 — invalid artifact id</h1>
+<p><a href="/admin">Back to admin</a></p></div>`),
+        400
+      );
+    }
+    const path = join(config.dataDir, "artifacts", runId, `${profileId}.html`);
+    if (!existsSync(path)) {
+      return html(
+        reply,
+        layout("Not found", `<div class="card"><h1>404 — no such artifact</h1>
+<p><a href="/admin">Back to admin</a></p></div>`),
+        404
+      );
+    }
+    // The artifact IS the sent newsletter — serve it verbatim.
+    return html(reply, readFileSync(path, "utf8"));
   });
 
   // ---------- profile create ----------
