@@ -116,11 +116,22 @@ export interface RawMarket {
   event_ticker: string;
   title: string;
   status: string;
-  yes_bid?: number;
-  yes_ask?: number;
-  last_price?: number;
-  volume?: number;
+  /** Legacy integer-cent fields (older API shape; now often null). */
+  yes_bid?: number | null;
+  yes_ask?: number | null;
+  last_price?: number | null;
+  volume?: number | null;
   open_interest?: number | null;
+  /**
+   * Current API shape (observed live 2026-07-22): decimal-dollar strings
+   * ("0.0100" = 1 cent) and fixed-point strings ("1390.00"). Read FIRST,
+   * legacy fields are the fallback.
+   */
+  last_price_dollars?: string | null;
+  yes_bid_dollars?: string | null;
+  yes_ask_dollars?: string | null;
+  volume_fp?: string | null;
+  open_interest_fp?: string | null;
   close_time: string;
   result?: string;
 }
@@ -140,9 +151,15 @@ export interface RawSeries {
 
 export interface RawCandlestick {
   end_period_ts: number;
-  price?: { close?: number | null };
-  volume?: number;
+  /** Legacy: integer-cent close. Current: *_dollars string fields. */
+  price?: { close?: number | null; close_dollars?: string | null };
+  /** Current shape: bid/ask OHLC objects with decimal-dollar strings. */
+  yes_bid?: { close_dollars?: string | null };
+  yes_ask?: { close_dollars?: string | null };
+  volume?: number | null;
+  volume_fp?: string | null;
   open_interest?: number | null;
+  open_interest_fp?: string | null;
 }
 
 export interface MarketsResponse {

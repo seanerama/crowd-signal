@@ -12,7 +12,7 @@ import {
   KalshiClient,
   type KalshiClientOverrides
 } from "./client.js";
-import { normalizeMarket } from "./normalize.js";
+import { dollarsToCents, fpToInt, normalizeMarket } from "./normalize.js";
 import {
   fail,
   type Candle,
@@ -34,6 +34,22 @@ export * from "./types.js";
 
 /** Cursor-pagination guard: absorb churn without unbounded crawling. */
 const MAX_PAGES = 10;
+
+/**
+ * Candlestick close in cents: current-shape trade close (price.close_dollars),
+ * else bid/ask close midpoint (*_dollars), else legacy integer price.close,
+ * else null ("no trades that period").
+ */
+function candleCloseCents(c: import("./types.js").RawCandlestick): number | null {
+  const trade = dollarsToCents(c.price?.close_dollars);
+  if (trade !== null && trade > 0) return trade;
+  const bid = dollarsToCents(c.yes_bid?.close_dollars);
+  const ask = dollarsToCents(c.yes_ask?.close_dollars);
+  if (bid !== null && ask !== null && bid + ask > 0) {
+    return Math.round((bid + ask) / 2);
+  }
+  return c.price?.close ?? null;
+}
 const PAGE_LIMIT = 200;
 
 const DISABLED = "kalshi disabled";
@@ -231,9 +247,9 @@ class LiveKalshiSource implements KalshiSource {
       ok: true,
       value: res.value.candlesticks.map((c) => ({
         endPeriod: new Date(c.end_period_ts * 1000).toISOString(),
-        yesPriceCloseCents: c.price?.close ?? null,
-        volume: c.volume ?? 0,
-        openInterest: c.open_interest ?? null
+        yesPriceCloseCents: candleCloseCents(c),
+        volume: fpToInt(c.volume_fp) ?? c.volume ?? 0,
+        openInterest: fpToInt(c.open_interest_fp) ?? c.open_interest ?? null
       }))
     };
   }
