@@ -1,59 +1,20 @@
-# Crowd-Signal — Status & Handoff
+# Status & Handoff
 
-> Runtime/ops truth (framework-spec §4.6). Owned by the **Release/Deploy Operator**,
-> updated on every deploy. Records secret **locations** only — never values.
+> Runtime/ops truth (framework-spec §4.6). Generated from `.verity/runtime.json`
+> by the Release/Deploy Operator. Secret LOCATIONS only — never values.
 
-**As of:** 2026-07-22 — stage 1 built on branch, **not yet deployed**
+**Live version:** 0.1.2
+**Deployed at:** 2026-07-22T15:46Z (first deploy; redeploy-verified 15:50Z)
+**Rollback from:** sha256:feb6ff72d8da20721fa6f4dc9dc77a97194db1d44383cacb9d77d91c901110d0
 
-## TL;DR
+## Environments
+- **prod:** {"digest":"sha256:1f394d738f6cd2007326af670f92aa5f84f8200c1a65ed1c554ef9d0a28f3495","url":"http://ue1khehsjcb77de7ulzbyl1u.34.207.137.224.sslip.io"}
 
-Version **0.1.0**. Stage 1 (walking skeleton) is built and green locally:
-Fastify app on Node 22, config validation at boot, `GET /healthz` against a real
-SQLite DB + migration check, stub `POST /trigger/daily` / `POST /trigger/discovery`
-pipelines (runs row + self-contained HTML artifact, idempotent-per-day), CI gates
-(lint/typecheck/build/test + fixed full-history secret scan), arm64-compatible
-Dockerfile verified with a local container smoke test. **Deployment happens in a
-later role — nothing is live.**
-
-## Live deployment
-
-- (none — first deploy pending)
-
-## Images
-
-- prefix: `ghcr.io/seanerama/crowd-signal`
-- (no releases yet)
-
-## Flags (kill-switches — all default OFF, all currently OFF)
-
-| Flag | State | Required secret when ON |
-| --- | --- | --- |
-| `KALSHI_ENABLED` | OFF | — |
-| `ADMIN_UI_ENABLED` | OFF | — |
-| `MAILER_ENABLED` | OFF | `RESEND_API_KEY` |
-| `WATCHER_ENABLED` | OFF | — |
-| `SUGGEST_ENABLED` | OFF | `ANTHROPIC_API_KEY` |
-
-Boot refuses (clear error, exit 1) if any flag is ON with its required secret
-missing, or if `TRIGGER_API_TOKEN` is absent.
-
-## Secrets
-
-Names + LOCATIONS only, never values. All runtime secrets live in the **Coolify
-env store** on the deploy target (see the committed pointer
-`.verity/deploy-access.README.md`; access details are gitignored in
-`.verity/deploy-access.md`).
-
-- `TRIGGER_API_TOKEN` — required always — Coolify env store (not yet configured)
-- `RESEND_API_KEY` — required when `MAILER_ENABLED=true` — Coolify env store (not yet configured)
-- `ANTHROPIC_API_KEY` — required when `SUGGEST_ENABLED=true` — Coolify env store (not yet configured)
-
-## Watch items
-
-- (placeholder) first deploy: `/data` volume mount + redeploy persistence check
-- (placeholder) better-sqlite3 native build on arm64 under Coolify build
-- (placeholder) CI secret-scan runtime as history grows
+## Secret locations (names + on-disk locations only, never values)
+- TRIGGER_API_TOKEN @ Coolify env store (app ue1khehsjcb77de7ulzbyl1u); local copy .verity/deploy.env
+- COOLIFY_API_TOKEN @ .verity/deploy.env (copied from dev-server ~/nsaf/.env)
+- RESEND_API_KEY @ not yet provisioned (needed when MAILER_ENABLED flips)
+- ANTHROPIC_API_KEY @ not yet provisioned (needed when SUGGEST_ENABLED flips)
 
 ## Coordination notes
-
-- Stage 1 built on `feat/stage-1-walking-skeleton-boot-healthz-stub-trigger-pipeline-ci-gates-fi`; review + merge + deploy are later roles.
+- Smoke gate passed (healthz flow, verified:true) + behavior checks: 401 unauth, 202 runId, idempotent alreadyRan across redeploy (volume persistence proven)

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.2
+
+### Fixes
+- upgrade fastify to 5.10 (CVE-2026-25223, CVE-2026-33806) + error-handler typing
+
 ## 0.1.1
 
 ### Fixes
