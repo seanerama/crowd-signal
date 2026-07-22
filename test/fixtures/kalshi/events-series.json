@@ -1,0 +1,23 @@
+{
+  "events": [
+    {
+      "event_ticker": "KXHIGHNY-26JUL22",
+      "series_ticker": "KXHIGHNY",
+      "title": "Highest temperature in NYC on Jul 22, 2026?",
+      "sub_title": "Jul 22, 2026",
+      "category": "Climate and Weather",
+      "mutually_exclusive": true,
+      "strike_date": "2026-07-23T02:00:00Z"
+    },
+    {
+      "event_ticker": "KXHIGHNY-26JUL23",
+      "series_ticker": "KXHIGHNY",
+      "title": "Highest temperature in NYC on Jul 23, 2026?",
+      "sub_title": "Jul 23, 2026",
+      "category": "Climate and Weather",
+      "mutually_exclusive": true,
+      "strike_date": "2026-07-24T02:00:00Z"
+    }
+  ],
+  "cursor": ""
+}

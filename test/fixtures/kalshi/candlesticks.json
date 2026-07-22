@@ -1,0 +1,20 @@
+{
+  "candlesticks": [
+    {
+      "end_period_ts": 1784678400,
+      "yes_bid": { "open": 40, "low": 38, "high": 43, "close": 42 },
+      "yes_ask": { "open": 45, "low": 43, "high": 47, "close": 46 },
+      "price": { "open": 41, "low": 39, "high": 45, "close": 44, "mean": 42, "previous": 40 },
+      "volume": 812,
+      "open_interest": 5100
+    },
+    {
+      "end_period_ts": 1784764800,
+      "yes_bid": { "open": 42, "low": 41, "high": 44, "close": 43 },
+      "yes_ask": { "open": 46, "low": 44, "high": 48, "close": 47 },
+      "price": { "open": 44, "low": 42, "high": 46, "close": null, "mean": null, "previous": 44 },
+      "volume": 0,
+      "open_interest": 5100
+    }
+  ]
+}

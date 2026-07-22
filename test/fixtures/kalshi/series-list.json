@@ -1,0 +1,18 @@
+{
+  "series": [
+    {
+      "ticker": "KXHIGHNY",
+      "title": "Highest temperature in NYC",
+      "category": "Climate and Weather",
+      "frequency": "daily",
+      "tags": ["Weather", "NYC"]
+    },
+    {
+      "ticker": "KXFEDDECISION",
+      "title": "Fed rate decision",
+      "category": "Economics",
+      "frequency": "monthly",
+      "tags": ["Fed", "Rates"]
+    }
+  ]
+}
