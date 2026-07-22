@@ -16,12 +16,20 @@ export interface FlagSpec {
   flag: string;
   /** Env var holding the secret this flag requires when ON (if any). */
   requiredSecret?: string;
+  /**
+   * Env vars this flag requires when ON — for flags that need more than one
+   * secret. All listed vars must be non-empty. Additive to `requiredSecret`.
+   */
+  requiredSecrets?: readonly string[];
 }
 
 /** Kill-switch flags modeled in stage 1. All default OFF. */
 export const FLAG_SPECS: readonly FlagSpec[] = [
   { flag: "KALSHI_ENABLED" },
-  { flag: "ADMIN_UI_ENABLED" },
+  {
+    flag: "ADMIN_UI_ENABLED",
+    requiredSecrets: ["ADMIN_PASSWORD", "ADMIN_SESSION_SECRET"]
+  },
   { flag: "MAILER_ENABLED", requiredSecret: "RESEND_API_KEY" },
   { flag: "WATCHER_ENABLED" },
   { flag: "SUGGEST_ENABLED", requiredSecret: "ANTHROPIC_API_KEY" }
@@ -33,6 +41,10 @@ export interface Config {
   port: number;
   triggerApiToken: string;
   flags: Record<string, boolean>;
+  /** Empty unless set; guaranteed non-empty when ADMIN_UI_ENABLED is ON. */
+  adminPassword: string;
+  /** Empty unless set; guaranteed non-empty when ADMIN_UI_ENABLED is ON. */
+  adminSessionSecret: string;
 }
 
 type Env = Record<string, string | undefined>;
@@ -61,12 +73,18 @@ export function loadConfig(env: Env = process.env): Config {
   for (const spec of FLAG_SPECS) {
     const on = parseFlag(spec.flag, env[spec.flag]);
     flags[spec.flag] = on;
-    if (on && spec.requiredSecret) {
-      const secret = env[spec.requiredSecret]?.trim() ?? "";
-      if (secret === "") {
-        problems.push(
-          `${spec.flag} is ON but its required secret ${spec.requiredSecret} is missing — refusing to boot`
-        );
+    if (on) {
+      const required = [
+        ...(spec.requiredSecret ? [spec.requiredSecret] : []),
+        ...(spec.requiredSecrets ?? [])
+      ];
+      for (const name of required) {
+        const secret = env[name]?.trim() ?? "";
+        if (secret === "") {
+          problems.push(
+            `${spec.flag} is ON but its required secret ${name} is missing — refusing to boot`
+          );
+        }
       }
     }
   }
@@ -87,6 +105,8 @@ export function loadConfig(env: Env = process.env): Config {
     host: env.HOST?.trim() || "0.0.0.0",
     port,
     triggerApiToken,
-    flags
+    flags,
+    adminPassword: env.ADMIN_PASSWORD?.trim() ?? "",
+    adminSessionSecret: env.ADMIN_SESSION_SECRET?.trim() ?? ""
   };
 }

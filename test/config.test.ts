@@ -54,12 +54,48 @@ describe("config validation at boot", () => {
     const config = loadConfig({
       ...baseEnv,
       KALSHI_ENABLED: "true",
-      WATCHER_ENABLED: "true",
-      ADMIN_UI_ENABLED: "true"
+      WATCHER_ENABLED: "true"
     });
     expect(config.flags.KALSHI_ENABLED).toBe(true);
     expect(config.flags.WATCHER_ENABLED).toBe(true);
+  });
+
+  it("ADMIN_UI_ENABLED=true with no admin secrets refuses to boot naming both", () => {
+    expect(() =>
+      loadConfig({ ...baseEnv, ADMIN_UI_ENABLED: "true" })
+    ).toThrow(/ADMIN_PASSWORD[\s\S]*ADMIN_SESSION_SECRET/);
+  });
+
+  it("ADMIN_UI_ENABLED=true missing only ADMIN_SESSION_SECRET refuses to boot", () => {
+    expect(() =>
+      loadConfig({
+        ...baseEnv,
+        ADMIN_UI_ENABLED: "true",
+        ADMIN_PASSWORD: "hunter2"
+      })
+    ).toThrow(/ADMIN_SESSION_SECRET/);
+  });
+
+  it("ADMIN_UI_ENABLED=true missing only ADMIN_PASSWORD refuses to boot", () => {
+    expect(() =>
+      loadConfig({
+        ...baseEnv,
+        ADMIN_UI_ENABLED: "true",
+        ADMIN_SESSION_SECRET: "s3cret-session-key"
+      })
+    ).toThrow(/ADMIN_PASSWORD/);
+  });
+
+  it("ADMIN_UI_ENABLED=true with both admin secrets boots and exposes them", () => {
+    const config = loadConfig({
+      ...baseEnv,
+      ADMIN_UI_ENABLED: "true",
+      ADMIN_PASSWORD: "hunter2",
+      ADMIN_SESSION_SECRET: "s3cret-session-key"
+    });
     expect(config.flags.ADMIN_UI_ENABLED).toBe(true);
+    expect(config.adminPassword).toBe("hunter2");
+    expect(config.adminSessionSecret).toBe("s3cret-session-key");
   });
 
   it("rejects garbage flag values instead of guessing", () => {
